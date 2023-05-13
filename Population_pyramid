@@ -1,0 +1,90 @@
+#Population pyramid
+
+library(wakefield)
+library(ggplot2)
+library(dplyr)
+
+
+#creating a random dataset using wakefield lib with two varable and 10000 observations
+dfage<- data.frame(age=wakefield::age(n=10000,x=0:100),
+                   sex=wakefield::sex(n=10000))
+
+#creating the agegroup by creating another column 
+
+dfage<-dfage %>% 
+  mutate(age = as.numeric(age)) %>% 
+  mutate(agegroup=case_when(between(age,0,10)~'0-10',
+                            between(age,11,20)~'11-20',
+                            between(age,21,30)~'21-30',
+                            between(age,31,40)~'31-40',
+                            between(age,41,50)~'41-50',
+                            between(age,51,60)~'51-60',
+                            between(age,61,70)~'61-70',
+                            between(age,71,80)~'71-80',
+                            between(age,81,120)~'80+',
+                            TRUE~'Unknown'
+                            ))
+
+pop<-dfage %>%
+  dplyr::group_by(agegroup,sex) %>% #grouping the dataset by agegroup and sex 
+  dplyr::tally() %>%  #total count of male and female under the agegroup bucket 
+  #for pop pyramid creating the negative value for one sex
+  dplyr::mutate(n = ifelse(sex=='Male',n*-1,n)) %>%
+  dplyr::mutate(n1 = ifelse(sex=='Male',n+70*-1,n+70))
+  
+#female_data<- subset(pop,sex=="Female")#subset for creating point on one side
+  
+# visualize the data using ggplot library
+pl<-ggplot(data=pop,aes(x= agegroup,y = n,fill = sex))
+#create the bar chart using geom_bar function
+pl<-pl+geom_bar(stat = "identity",aes(x= agegroup,y = n,fill = sex))
+
+#pl<-pl+geom_point(data = female_data,aes(y = n1),linetype ="solid")#one side point
+
+#pl<-pl+geom_line(pop, aes(x = agegroup ,y = n1, color = sex))
+#pl <- pl + geom_line(data = subset(pop,sex =="Female"),aes(x = agegroup, y = n1), linetype = "solid", color = "blue")
+
+pl<-pl+geom_smooth(data = subset(pop,sex=="Female"),stat ="identity",group=1,
+                 aes(x =agegroup,y = n1,linetype = "solid"))
+
+pl<-pl+geom_smooth(data = subset(pop,sex=="Male"),stat ="identity",group=1,
+                 aes(x =agegroup,y = n1,linetype = "solid"))
+
+
+#to show the data labels use the geom_text function  and the negative value in-> 
+#->the one sex can be changed using abs[absolute] function and to adjust the data labels use hjust and size 
+
+pl<-pl+geom_text(data = subset(pop,sex =="Female" ),aes(label = abs(n)),hjust = -2, size =3)
+ 
+pl<-pl+geom_text(data = subset(pop,sex =="Male" ),aes(label = abs(n)),hjust = 2.5, size =3)
+
+
+#coord_filp function flip the bar chart vertical to horizontal 
+pl<-pl+ coord_flip(ylim = c(-1500,1500))
+
+
+#to improve the chart look use theme_classic fun 
+pl<-pl + theme_classic()
+#to provide the chart scale using the below fun 
+pl<-pl+scale_y_continuous(breaks = c(-1500,-1000,-500,0,500,1000,1500),
+                          labels = c(1500,1000,500,0,500,1000,1500))
+#to fill the bar color as manual use the below function
+pl<-pl+scale_fill_manual(values = c('#00FF00','pink'))
+#on the y intercept dividing line to give the req color and size use the below func
+pl<-pl+geom_hline(yintercept = 0,size =2 ,colour ="grey")
+
+pl<- pl+ labs(title = " Population pyramid using GGPLOT")
+
+pl<-pl+labs(subtitle = 'Yearly admissions in Emergency ward')
+
+#pl<-pl+labs(caption = 'All rights reserved to sliceup')
+
+pl<-pl+labs(y='Admissions')
+
+pl<-pl+ labs(x='Age group')
+
+pl<-pl+labs(fill = "Patient sex")
+
+pl<-pl+theme(legend.position = "right")
+
+pl
