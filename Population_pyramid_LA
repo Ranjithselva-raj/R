@@ -1,0 +1,38 @@
+Pop<-read.csv("Population.csv")
+function_poppyramid<- function(area="Hartlepool"){
+  pyramid1<- Pop %>% 
+    group_by(AreaName) %>% 
+    mutate(mal_per=(Malescount/sum(Malescount)*100)) %>% 
+    mutate(femal_per=(Femalescount/sum(Femalescount)*-100))
+  
+  subset1<- subset(pyramid1, AreaName == area)
+  subset2<- subset(pyramid1, AreaName == "ENGLAND")
+  comb_subset<-rbind(subset1, subset2)
+  
+  
+  #population pyramid
+  ggplot(comb_subset, aes(x = Ageband)) +
+    geom_bar(data = subset1,aes(y = mal_per), stat = "identity", fill = "Green", width = 0.4) +
+    geom_text(data = subset1, aes(y = mal_per, label = abs(round(Malescount, 1))), hjust = -0.5, size =3, color = "black")+
+    
+    geom_bar(data = subset1,aes(y = femal_per), stat = "identity", fill = "pink",  width = 0.4) +
+    geom_text(data = subset1, aes(y = femal_per, label = abs(round(Femalescount,1))), hjust = 1.5, size =3, color = "black")+
+    
+    geom_line(data = subset2, stat = "identity", group=1, aes(Ageband,mal_per), color="black")+
+    geom_line(data = subset2, stat = "identity", group=1, aes(Ageband,femal_per), color="black")+
+    coord_flip(ylim = c(-50,50))+
+    theme_classic()+ theme(legend.position = "bottom")+
+    geom_hline(yintercept = 0,size=1, color ="black")+
+    labs(title = " Local Authority Population pyramid ")+
+    labs(x="Age Group")+
+    labs(y= "Population count")+
+    theme(axis.title.x = element_text("Poulation",size = 20,colour = "blue"),
+          axis.title.y = element_text("Age Group",size = 20,colour = "blue"),
+          plot.title = element_text(colour = "blue",size = 30,family = "Courier",hjust = 0.5))
+    
+    
+  
+  
+}
+
+function_poppyramid("Hammersmith and Fulham")
